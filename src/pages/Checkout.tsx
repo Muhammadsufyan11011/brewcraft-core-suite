@@ -60,6 +60,25 @@ export default function Checkout() {
       createdAt: new Date().toISOString(),
     };
 
+    // Send order data to webhook
+    try {
+      const response = await fetch('https://present19298.app.n8n.cloud/webhook-test/2', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(order),
+      });
+
+      if (response.ok) {
+        toast.success('Order submitted successfully!');
+      } else {
+        toast.error('Failed to submit order to webhook.');
+      }
+    } catch (error) {
+      toast.error('Error submitting order to webhook.');
+    }
+
     // Webhook-ready payload — once Cloud is enabled, POST to n8n endpoint here
     sessionStorage.setItem("brewcraft_last_order", JSON.stringify(order));
     clear();
