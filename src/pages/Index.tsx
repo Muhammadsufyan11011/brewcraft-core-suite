@@ -3,10 +3,11 @@ import { ArrowRight, Truck, Leaf, Award } from "lucide-react";
 import { useState, useEffect } from "react";
 import hero from "@/assets/hero.jpg";
 import story from "@/assets/story.jpg";
-import { products } from "@/data/products";
+import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 const testimonials = [
@@ -16,6 +17,7 @@ const testimonials = [
 ];
 
 export default function Index() {
+  const { products, loading } = useProducts();
   const featured = products.filter((p) => p.featured).slice(0, 4);
   const bestsellers = products.filter((p) => p.bestseller).slice(0, 4);
   const [t, setT] = useState(0);
@@ -23,6 +25,14 @@ export default function Index() {
     const id = setInterval(() => setT((x) => (x + 1) % testimonials.length), 5000);
     return () => clearInterval(id);
   }, []);
+
+  const SkeletonGrid = () => (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i}><Skeleton className="aspect-[4/5] mb-4" /><Skeleton className="h-4 w-2/3" /></div>
+      ))}
+    </div>
+  );
 
   return (
     <>
@@ -57,7 +67,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* TRUST BAR */}
       <section className="border-b border-border/60">
         <div className="container-wide py-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
           {[
@@ -76,7 +85,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* FEATURED */}
       <section className="container-wide py-24">
         <div className="flex items-end justify-between mb-12">
           <div>
@@ -87,12 +95,13 @@ export default function Index() {
             View all <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-          {featured.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
+        {loading ? <SkeletonGrid /> : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+            {featured.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
       </section>
 
-      {/* STORY */}
       <section className="bg-secondary/40">
         <div className="container-wide py-24 grid md:grid-cols-2 gap-16 items-center">
           <div className="aspect-[4/5] overflow-hidden">
@@ -116,18 +125,18 @@ export default function Index() {
         </div>
       </section>
 
-      {/* BESTSELLERS */}
       <section className="container-wide py-24">
         <div className="text-center mb-14">
           <p className="eyebrow mb-3">Loved by thousands</p>
           <h2 className="font-display text-4xl md:text-5xl font-medium">Bestsellers</h2>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
-          {bestsellers.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
+        {loading ? <SkeletonGrid /> : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+            {bestsellers.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
       </section>
 
-      {/* TESTIMONIALS */}
       <section className="bg-brown-deep text-cream">
         <div className="container-tight py-24 text-center">
           <p className="eyebrow mb-6">— Words from the cup</p>
@@ -154,7 +163,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* NEWSLETTER */}
       <section className="container-tight py-24 text-center">
         <p className="eyebrow mb-4">Join the ritual</p>
         <h2 className="font-display text-4xl md:text-5xl font-medium mb-4 text-balance">
