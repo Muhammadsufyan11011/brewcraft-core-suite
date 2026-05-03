@@ -34,10 +34,7 @@ export default function Cart() {
               </Link>
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-1">{product.category}</p>
-                    <Link to={`/product/${product.slug}`} className="font-display text-lg font-medium hover:text-accent">{product.name}</Link>
-                  </div>
+                  <Link to={`/product/${product.slug}`} className="font-display text-lg font-medium hover:text-accent">{product.name}</Link>
                   <button onClick={() => remove(product.id)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
                 </div>
                 <div className="flex items-center justify-between">

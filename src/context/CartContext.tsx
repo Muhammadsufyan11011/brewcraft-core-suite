@@ -1,11 +1,18 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
-import { Product } from "@/data/products";
 
-export type CartItem = { product: Product; qty: number };
+export type CartProduct = {
+  id: string;
+  slug: string;
+  name: string;
+  price: number;
+  image: string;
+};
+
+export type CartItem = { product: CartProduct; qty: number };
 
 type CartCtx = {
   items: CartItem[];
-  add: (p: Product, qty?: number) => void;
+  add: (p: CartProduct, qty?: number) => void;
   remove: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clear: () => void;
@@ -30,7 +37,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(KEY, JSON.stringify(items));
   }, [items]);
 
-  const add = (p: Product, qty = 1) =>
+  const add = (p: CartProduct, qty = 1) =>
     setItems((cur) => {
       const found = cur.find((i) => i.product.id === p.id);
       if (found) return cur.map((i) => (i.product.id === p.id ? { ...i, qty: i.qty + qty } : i));
