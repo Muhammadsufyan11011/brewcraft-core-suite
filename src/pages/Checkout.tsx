@@ -94,28 +94,38 @@ export default function Checkout() {
       createdAt: new Date().toISOString(),
     };
 
-    const payload = buildWebhookPayload(order);
+    // Persist to database
+    const { error: dbErr } = await supabase.from("orders").insert({
+      order_number: order.order_id,
+      customer_name: parsed.data.name,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
+      address: parsed.data.address,
+      notes: parsed.data.notes ?? null,
+      items: order.items,
+      subtotal,
+      discount,
+      shipping,
+      total,
+      coupon: coupon?.code ?? null,
+      status: "processing",
+    });
+    if (dbErr) {
+      console.error("order insert error", dbErr);
+      toast.error("Couldn't save order. Please try again.");
+      setSubmitting(false);
+      return;
+    }
 
+    // Fire webhook (non-blocking)
     try {
-      const response = await fetch("https://present19298.app.n8n.cloud/webhook-test/coffe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      await supabase.functions.invoke("order-webhook", {
+        body: { event: "order.created", ...buildWebhookPayload(order) },
       });
-
-      console.log("Webhook response status:", response.status);
-      console.log("Webhook response ok:", response.ok);
-
-      if (response.status === 200) {
-        toast.success("Order placed successfully");
-      } else {
-        toast.error("Webhook request failed. Please try again.");
-      }
+      toast.success("Order placed successfully");
     } catch (error) {
       console.error("Webhook request error:", error);
-      toast.error("Error sending order to webhook.");
+      toast.success("Order placed (webhook pending)");
     }
 
     sessionStorage.setItem("brewcraft_last_order", JSON.stringify(order));
