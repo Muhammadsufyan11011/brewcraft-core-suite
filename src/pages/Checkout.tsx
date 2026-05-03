@@ -21,7 +21,7 @@ const schema = z.object({
 type CheckoutOrder = {
   order_id: string;
   customer: z.infer<typeof schema>;
-  items: { id: number; name: string; qty: number; price: number }[];
+  items: { id: string; name: string; qty: number; price: number }[];
   subtotal: number;
   discount: number;
   shipping: number;
