@@ -18,6 +18,39 @@ const schema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+type CheckoutOrder = {
+  order_id: string;
+  customer: z.infer<typeof schema>;
+  items: { id: number; name: string; qty: number; price: number }[];
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  total: number;
+  coupon: string | null;
+  status: string;
+  createdAt: string;
+};
+
+const buildWebhookPayload = (order: CheckoutOrder) => {
+  const totalQuantity = order.items.reduce((sum, item) => sum + item.qty, 0);
+  const productNames = order.items.map((item) => item.name).join(", ");
+
+  return {
+    customer_name: order.customer.name,
+    email: order.customer.email,
+    product_name: productNames,
+    quantity: totalQuantity,
+    total_price: order.total,
+    timestamp: order.createdAt,
+    order_id: order.order_id,
+    items: order.items,
+    subtotal: order.subtotal,
+    discount: order.discount,
+    shipping: order.shipping,
+    coupon: order.coupon,
+  };
+};
+
 export default function Checkout() {
   const { items, subtotal, clear } = useCart();
   const navigate = useNavigate();
@@ -47,7 +80,7 @@ export default function Checkout() {
     }
 
     setSubmitting(true);
-    const order = {
+    const order: CheckoutOrder = {
       order_id: `BC-${Date.now()}`,
       customer: parsed.data,
       items: items.map((i) => ({ id: i.product.id, name: i.product.name, qty: i.qty, price: i.product.price })),
@@ -60,26 +93,30 @@ export default function Checkout() {
       createdAt: new Date().toISOString(),
     };
 
-    // Send order data to webhook
+    const payload = buildWebhookPayload(order);
+
     try {
-      const response = await fetch('https://present19298.app.n8n.cloud/webhook-test/2', {
-        method: 'POST',
+      const response = await fetch("https://present19298.app.n8n.cloud/webhook-test/coffe", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(order),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        toast.success('Order submitted successfully!');
+      console.log("Webhook response status:", response.status);
+      console.log("Webhook response ok:", response.ok);
+
+      if (response.status === 200) {
+        toast.success("Order placed successfully");
       } else {
-        toast.error('Failed to submit order to webhook.');
+        toast.error("Webhook request failed. Please try again.");
       }
     } catch (error) {
-      toast.error('Error submitting order to webhook.');
+      console.error("Webhook request error:", error);
+      toast.error("Error sending order to webhook.");
     }
 
-    // Webhook-ready payload — once Cloud is enabled, POST to n8n endpoint here
     sessionStorage.setItem("brewcraft_last_order", JSON.stringify(order));
     clear();
     setTimeout(() => navigate("/thank-you"), 600);
