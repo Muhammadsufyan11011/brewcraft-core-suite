@@ -1,22 +1,34 @@
-import { useMemo, useState } from "react";
-import { products, categories, types } from "@/data/products";
+import { useEffect, useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import { Slider } from "@/components/ui/slider";
+import { useProducts } from "@/hooks/useProducts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Shop() {
+  const { products, loading } = useProducts();
   const [cat, setCat] = useState<string>("All");
-  const [type, setType] = useState<string>("All");
-  const [maxPrice, setMaxPrice] = useState<number>(30);
+  const [maxPrice, setMaxPrice] = useState<number>(50);
+
+  const categories = useMemo(
+    () => ["All", ...Array.from(new Set(products.map((p) => p.category)))],
+    [products]
+  );
+
+  useEffect(() => {
+    if (products.length) {
+      const m = Math.max(...products.map((p) => Number(p.price)));
+      setMaxPrice((cur) => (cur < m ? Math.ceil(m) : cur));
+    }
+  }, [products.length]);
+
+  const max = Math.max(30, ...products.map((p) => Number(p.price)));
 
   const filtered = useMemo(
     () =>
       products.filter(
-        (p) =>
-          (cat === "All" || p.category === cat) &&
-          (type === "All" || p.type === type) &&
-          p.price <= maxPrice
+        (p) => (cat === "All" || p.category === cat) && Number(p.price) <= maxPrice
       ),
-    [cat, type, maxPrice]
+    [products, cat, maxPrice]
   );
 
   return (
@@ -29,7 +41,6 @@ export default function Shop() {
       </div>
 
       <div className="grid lg:grid-cols-[240px_1fr] gap-12">
-        {/* Filters */}
         <aside className="space-y-10 lg:sticky lg:top-24 lg:self-start">
           <div>
             <h3 className="text-xs uppercase tracking-widest font-semibold mb-4">Category</h3>
@@ -38,7 +49,7 @@ export default function Shop() {
                 <li key={c}>
                   <button
                     onClick={() => setCat(c)}
-                    className={`text-sm transition-colors ${cat === c ? "text-accent font-medium" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`text-sm capitalize transition-colors ${cat === c ? "text-accent font-medium" : "text-muted-foreground hover:text-foreground"}`}
                   >
                     {c}
                   </button>
@@ -47,33 +58,23 @@ export default function Shop() {
             </ul>
           </div>
           <div>
-            <h3 className="text-xs uppercase tracking-widest font-semibold mb-4">Grind</h3>
-            <ul className="space-y-2">
-              {types.map((t) => (
-                <li key={t}>
-                  <button
-                    onClick={() => setType(t)}
-                    className={`text-sm transition-colors ${type === t ? "text-accent font-medium" : "text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {t}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
             <h3 className="text-xs uppercase tracking-widest font-semibold mb-4">Max price: ${maxPrice}</h3>
-            <Slider value={[maxPrice]} onValueChange={(v) => setMaxPrice(v[0])} min={15} max={30} step={1} />
+            <Slider value={[maxPrice]} onValueChange={(v) => setMaxPrice(v[0])} min={10} max={Math.ceil(max)} step={1} />
           </div>
         </aside>
 
-        {/* Grid */}
         <div>
-          <p className="text-sm text-muted-foreground mb-6">{filtered.length} products</p>
+          <p className="text-sm text-muted-foreground mb-6">
+            {loading ? "Loading…" : `${filtered.length} products`}
+          </p>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-12">
-            {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
+            {loading
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i}><Skeleton className="aspect-[4/5] mb-4" /><Skeleton className="h-4 w-2/3" /></div>
+                ))
+              : filtered.map((p) => <ProductCard key={p.id} product={p} />)}
           </div>
-          {filtered.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <p className="text-muted-foreground py-20 text-center">No coffees match those filters.</p>
           )}
         </div>
